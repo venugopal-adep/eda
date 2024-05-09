@@ -10,6 +10,7 @@ iris = sns.load_dataset('iris')
 
 # Set up the Streamlit app
 st.title('Iris Dataset Visualization')
+st.markdown('Venugopal Adep')
 
 # Create dropdown menus for plotting library and plot type
 library = st.selectbox('Select a plotting library', ['matplotlib', 'seaborn', 'plotly', 'altair'])
