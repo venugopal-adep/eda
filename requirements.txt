@@ -5,3 +5,6 @@ scikit-learn
 streamlit
 seaborn
 plotly
+mpl-toolkits.clifford
+mpl-finance
+scipy
