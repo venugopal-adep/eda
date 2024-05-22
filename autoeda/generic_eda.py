@@ -10,7 +10,7 @@ from sklearn.feature_selection import SelectKBest, f_regression
 
 
 def main():
-    st.title('Advanced EDA on Uploaded Dataset')
+    st.title('Auto EDA')
     st.subheader('Exploratory Data Analysis using Streamlit and Plotly')
 
     # File uploader allows user to add their own CSV
