@@ -29,6 +29,7 @@ def main():
             show_boxplot = st.checkbox('Show Box Plot', False)
             show_heatmap = st.checkbox('Correlation Heatmap', False)
             show_scatterplot = st.checkbox('Show Scatter Plot', False)
+            show_crosstab = st.checkbox('Show Crosstab Analysis', False)
             show_unique_values = st.checkbox('Show Unique Values Count', False)
             show_pairplot = st.checkbox('Show Pair Plot', False)
             show_correlation = st.checkbox('Show Correlation Analysis', False)
@@ -124,6 +125,31 @@ def main():
             
             corr_with_var = corr_matrix[var].sort_values(ascending=False)
             st.write(corr_with_var)
+        
+        if show_crosstab:
+            st.subheader("Crosstab Analysis")
+            categorical_columns = data.select_dtypes(include=['object']).columns.tolist()
+            if len(categorical_columns) >= 2:
+                var1 = st.selectbox("Select Variable 1", categorical_columns, index=0, key='crosstab_var1')
+                var2 = st.selectbox("Select Variable 2", categorical_columns, index=1, key='crosstab_var2')
+                
+                crosstab_count = pd.crosstab(data[var1], data[var2], margins=True)
+                crosstab_pct = pd.crosstab(data[var1], data[var2], margins=True, normalize='all')
+                
+                crosstab_result = crosstab_count.astype(str) + " (" + crosstab_pct.applymap(lambda x: f"{x:.2%}") + ")"
+                
+                st.write("Crosstab Result (Count and Percentage):")
+                st.write(crosstab_result)
+                
+                fig = px.imshow(crosstab_count, text_auto=True, aspect="auto")
+                fig.update_layout(
+                    xaxis_title=var2,
+                    yaxis_title=var1
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("Please ensure the dataset has at least two categorical columns for Crosstab analysis.")
+
 
         if show_feature_scaling:
             st.subheader("Feature Scaling")
