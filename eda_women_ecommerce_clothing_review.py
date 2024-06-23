@@ -8,7 +8,7 @@ from textblob import TextBlob
 # Load data
 @st.cache_data
 def load_data():
-    data = pd.read_csv('Women_s_E-Commerce_Clothing_Reviews.csv')
+    data = pd.read_csv('Women_s_E-Commerce_Clothing_Reviews1.csv')
     return data
 
 data = load_data()
