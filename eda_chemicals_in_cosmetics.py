@@ -6,7 +6,7 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
 # Load the dataset
-file_path = 'Chemicals in Cosmetics.csv'
+file_path = 'Chemicals in Cosmetics1.csv'
 data = pd.read_csv(file_path)
 
 # Data preprocessing
