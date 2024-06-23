@@ -9,3 +9,4 @@ plotly
 mpl-toolkits.clifford
 mpl-finance
 scipy
+textblob
