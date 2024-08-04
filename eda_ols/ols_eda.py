@@ -1,249 +1,199 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
 import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.preprocessing import MinMaxScaler
-import streamlit as st
 
-
-
-# Set page config
-st.set_page_config(page_title="VIF and Model Analysis", layout="wide", page_icon="📊")
-
-# Custom CSS
-st.markdown("""
-<style>
-.stApp {
-    background-color: #f0f8ff;
-}
-.stButton>button {
-    background-color: #4CAF50;
-    color: white;
-}
-.stTabs [data-baseweb="tab-list"] {
-    gap: 2px;
-}
-.stTabs [data-baseweb="tab"] {
-    height: 50px;
-    white-space: pre-wrap;
-    background-color: #e6e6fa;
-    border-radius: 4px 4px 0 0;
-    gap: 1px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-}
-.stTabs [aria-selected="true"] {
-    background-color: #4CAF50;
-    color: white;
-}
-.highlight {
-    background-color: #e6e6fa;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Title and description
-st.title("📊 VIF and Model Analysis")
-st.markdown("**Developed by: Venugopal Adep**")
-st.markdown("Explore Variance Inflation Factor and model performance for BigMart Sales data!")
+# Streamlit UI
+st.write("## Model Summary and VIF Scores")
+st.write("**Developed by : Venugopal Adep**")
 
 # File upload
 train_file = st.sidebar.file_uploader("Upload train CSV file", type="csv")
 test_file = st.sidebar.file_uploader("Upload test CSV file", type="csv")
 
-# Function to preprocess data
-def preprocess_data(df):
-    df = df.drop(['Item_Identifier', 'Outlet_Identifier'], axis=1)
-    df['Item_Fat_Content'] = df['Item_Fat_Content'].replace({'low fat': 'Low Fat', 'LF': 'Low Fat', 'reg': 'Regular'})
-    df['Item_Weight'].fillna(df['Item_Weight'].mean(), inplace=True)
-    df['Outlet_Size'].fillna(df['Outlet_Size'].mode()[0], inplace=True)
-    df['Outlet_Age'] = 2013 - df['Outlet_Establishment_Year']
-    df = df.drop('Outlet_Establishment_Year', axis=1)
-    return df
-
-# Function to create models
-def create_models(X, y):
-    X = pd.get_dummies(X, drop_first=True)
-    scaler = MinMaxScaler()
-    X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns, index=X.index)
-    X_scaled = sm.add_constant(X_scaled)
-    
-    models = {}
-    models['Full Model'] = sm.OLS(y, X_scaled).fit()
-    
-    # Create additional models by dropping specific columns
-    columns_to_drop = ['Outlet_Age', 'Item_Weight', 'Item_Visibility']
-    for col in columns_to_drop:
-        X_reduced = X_scaled.drop(col, axis=1)
-        models[f'Model without {col}'] = sm.OLS(y, X_reduced).fit()
-    
-    return models, X_scaled
-
-# Function to calculate VIF
-def calculate_vif(X):
-    vif = pd.DataFrame()
-    vif["Feature"] = X.columns
-    vif["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
-    return vif.sort_values('VIF', ascending=False)
-
-# Main content
 if train_file is not None and test_file is not None:
-    # Load and preprocess data
-    train_df = preprocess_data(pd.read_csv(train_file))
-    test_df = preprocess_data(pd.read_csv(test_file))
-    
-    X = train_df.drop('Item_Outlet_Sales', axis=1)
-    y = train_df['Item_Outlet_Sales']
-    
-    # Create models
-    models, X_scaled = create_models(X, y)
-    
-    # Calculate VIF
-    vif_df = calculate_vif(X_scaled)
-    
-    # Tabs
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📚 Learn", "📊 Data Analysis", "🧮 Model Performance", "🔬 VIF Analysis", "🧠 Quiz"])
-    
-    with tab1:
-        st.header("📚 Learn about VIF and Model Analysis")
-        
-        st.markdown("""
-        <div class="highlight">
-        <h3>What is Variance Inflation Factor (VIF)?</h3>
-        <p>VIF is a measure of the amount of multicollinearity in a set of multiple regression variables. It provides an index that measures how much the variance of an estimated regression coefficient is increased because of collinearity.</p>
-        <ul>
-            <li>VIF = 1: Not correlated</li>
-            <li>1 < VIF < 5: Moderately correlated</li>
-            <li>VIF > 5: Highly correlated</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div class="highlight">
-        <h3>Why is VIF Important?</h3>
-        <ul>
-            <li>Helps identify multicollinearity in regression analysis</li>
-            <li>Assists in feature selection by identifying redundant variables</li>
-            <li>Improves model stability and interpretability</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div class="highlight">
-        <h3>Model Performance Metrics</h3>
-        <ul>
-            <li>R-squared: Proportion of variance explained by the model</li>
-            <li>Adjusted R-squared: R-squared adjusted for the number of predictors</li>
-            <li>F-statistic: Overall significance of the model</li>
-            <li>AIC/BIC: Model comparison metrics (lower is better)</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with tab2:
-        st.header("📊 Data Analysis")
-        
-        st.subheader("Dataset Overview")
-        st.write(train_df.head())
-        
-        st.subheader("Descriptive Statistics")
-        st.write(train_df.describe())
-        
-        st.subheader("Correlation Heatmap")
-        corr = train_df.corr()
-        fig = px.imshow(corr, text_auto=True, aspect="auto")
-        st.plotly_chart(fig)
-        
-        st.subheader("Feature Distribution")
-        feature = st.selectbox("Select a feature", train_df.columns)
-        fig = px.histogram(train_df, x=feature, marginal="box")
-        st.plotly_chart(fig)
-    
-    with tab3:
-        st.header("🧮 Model Performance")
-        
-        selected_model = st.selectbox("Select a model", list(models.keys()))
-        
+    # Load the data from the uploaded files
+    train_df = pd.read_csv(train_file)
+    test_df = pd.read_csv(test_file)
+
+    # Data preprocessing
+    train_df = train_df.drop(['Item_Identifier', 'Outlet_Identifier'], axis=1)
+    test_df = test_df.drop(['Item_Identifier', 'Outlet_Identifier'], axis=1)
+
+    train_df['Item_Fat_Content'] = train_df['Item_Fat_Content'].apply(lambda x: 'Low Fat' if x == 'low fat' or x == 'LF' else x)
+    train_df['Item_Fat_Content'] = train_df['Item_Fat_Content'].apply(lambda x: 'Regular' if x == 'reg' else x)
+    test_df['Item_Fat_Content'] = test_df['Item_Fat_Content'].apply(lambda x: 'Low Fat' if x == 'low fat' or x == 'LF' else x)
+    test_df['Item_Fat_Content'] = test_df['Item_Fat_Content'].apply(lambda x: 'Regular' if x == 'reg' else x)
+
+    item_weight_indices_to_be_updated = train_df[train_df['Item_Weight'].isnull()].index
+    train_df.loc[item_weight_indices_to_be_updated, 'Item_Weight'] = np.random.uniform(10, 14, len(item_weight_indices_to_be_updated))
+
+    item_weight_indices_to_be_updated = test_df[test_df['Item_Weight'].isnull()].index
+    test_df.loc[item_weight_indices_to_be_updated, 'Item_Weight'] = np.random.uniform(10, 14, len(item_weight_indices_to_be_updated))
+
+    grocery_store_indices = train_df[train_df['Outlet_Size'].isnull()].query(" Outlet_Type == 'Grocery Store' ").index
+    tier_2_indices = train_df[train_df['Outlet_Size'].isnull()].query(" Outlet_Location_Type == 'Tier 2' ").index
+
+    train_df.loc[grocery_store_indices, 'Outlet_Size'] = 'Small'
+    train_df.loc[tier_2_indices, 'Outlet_Size'] = 'Small'
+
+    grocery_store_indices = test_df[test_df['Outlet_Size'].isnull()].query(" Outlet_Type == 'Grocery Store' ").index
+    tier_2_indices = test_df[test_df['Outlet_Size'].isnull()].query(" Outlet_Location_Type == 'Tier 2' ").index
+
+    test_df.loc[grocery_store_indices, 'Outlet_Size'] = 'Small'
+    test_df.loc[tier_2_indices, 'Outlet_Size'] = 'Small'
+
+    train_df['Outlet_Age'] = 2013 - train_df['Outlet_Establishment_Year']
+    test_df['Outlet_Age'] = 2013 - test_df['Outlet_Establishment_Year']
+
+    train_features = train_df.drop(['Item_Outlet_Sales', 'Outlet_Establishment_Year'], axis=1)
+    train_target = train_df['Item_Outlet_Sales']
+
+    train_features = pd.get_dummies(train_features, drop_first=True)
+
+    scaler = MinMaxScaler()
+    train_features_scaled = scaler.fit_transform(train_features)
+    train_features_scaled = pd.DataFrame(train_features_scaled, index=train_features.index, columns=train_features.columns)
+
+    train_features_scaled = sm.add_constant(train_features_scaled)
+
+    # Model building
+    ols_model_0 = sm.OLS(train_target, train_features_scaled)
+    ols_res_0 = ols_model_0.fit()
+
+    train_features_scaled_new = train_features_scaled.drop("Outlet_Age", axis=1)
+    ols_model_2 = sm.OLS(train_target, train_features_scaled_new)
+    ols_res_2 = ols_model_2.fit()
+
+    train_features_scaled_new2 = train_features_scaled_new.drop(['Item_Type_Breads', 'Item_Type_Breakfast', 'Item_Type_Canned', 'Item_Type_Dairy', 'Item_Type_Frozen Foods', 'Item_Type_Fruits and Vegetables', 'Item_Type_Hard Drinks', 'Item_Type_Health and Hygiene', 'Item_Type_Household', 'Item_Type_Meat', 'Item_Type_Others', 'Item_Type_Seafood', 'Item_Type_Snack Foods', 'Item_Type_Soft Drinks', 'Item_Type_Starchy Foods'], axis=1)
+    ols_model_3 = sm.OLS(train_target, train_features_scaled_new2)
+    ols_res_3 = ols_model_3.fit()
+
+    train_features_scaled_new3 = train_features_scaled_new2.drop("Item_Weight", axis=1)
+    ols_model_4 = sm.OLS(train_target, train_features_scaled_new3)
+    ols_res_4 = ols_model_4.fit()
+
+    train_features_scaled_new4 = train_features_scaled_new3.drop(["Outlet_Location_Type_Tier 2", "Outlet_Location_Type_Tier 3"], axis=1)
+    ols_model_5 = sm.OLS(train_target, train_features_scaled_new4)
+    ols_res_5 = ols_model_5.fit()
+
+    train_features_scaled_new5 = train_features_scaled_new4.drop(["Outlet_Size_Small", "Outlet_Size_Medium"], axis=1)
+    ols_model_6 = sm.OLS(train_target, train_features_scaled_new5)
+    ols_res_6 = ols_model_6.fit()
+
+    train_features_scaled_new6 = train_features_scaled_new5.drop("Item_Visibility", axis=1)
+    ols_model_7 = sm.OLS(train_target, train_features_scaled_new6)
+    ols_res_7 = ols_model_7.fit()
+
+    # Log transformation on the target variable
+    train_target_log = np.log(train_target)
+
+    # Fitting new model with the transformed target variable
+    ols_model_8 = sm.OLS(train_target_log, train_features_scaled_new6)
+    ols_res_8 = ols_model_8.fit()
+
+    # Create a dropdown to select the model
+    model_options = ["ols_res_0", "ols_res_2", "ols_res_3", "ols_res_4", "ols_res_5", "ols_res_6", "ols_res_7", "ols_res_8"]
+    selected_model = st.sidebar.selectbox("Select a model", model_options)
+
+    # Display the summary of the selected model
+    if selected_model == "ols_res_0":
         st.subheader("Model Summary")
-        st.write(models[selected_model].summary())
-        
-        st.subheader("Coefficient Plot")
-        coef_df = pd.DataFrame({'Feature': models[selected_model].params.index, 'Coefficient': models[selected_model].params.values})
-        fig = px.bar(coef_df, x='Coefficient', y='Feature', orientation='h')
-        st.plotly_chart(fig)
-    
-    with tab4:
-        st.header("🔬 VIF Analysis")
+        st.write(ols_res_0.summary())
         
         st.subheader("VIF Scores")
-        st.write(vif_df)
+        vif_series = pd.Series(
+            [variance_inflation_factor(train_features_scaled.values, i) for i in range(train_features_scaled.shape[1])],
+            index=train_features_scaled.columns,
+            dtype=float
+        )
+        st.write(vif_series)
+
+    elif selected_model == "ols_res_2":
+        st.subheader("Model Summary")
+        st.write(ols_res_2.summary())
         
-        st.subheader("VIF Plot")
-        fig = px.bar(vif_df, x='VIF', y='Feature', orientation='h')
-        fig.add_vline(x=5, line_dash="dash", line_color="red", annotation_text="High VIF Threshold")
-        st.plotly_chart(fig)
-    
-    with tab5:
-        st.header("🧠 Test Your Knowledge")
+        st.subheader("VIF Scores")
+        vif_series = pd.Series(
+            [variance_inflation_factor(train_features_scaled_new.values, i) for i in range(train_features_scaled_new.shape[1])],
+            index=train_features_scaled_new.columns,
+            dtype=float
+        )
+        st.write(vif_series)
+
+    elif selected_model == "ols_res_3":
+        st.subheader("Model Summary")
+        st.write(ols_res_3.summary())
         
-        questions = [
-            {
-                "question": "What does VIF stand for?",
-                "options": ["Variable Inflation Factor", "Variance Inflation Factor", "Value Increase Factor", "Variable Importance Factor"],
-                "correct": 1
-            },
-            {
-                "question": "What is generally considered a high VIF value?",
-                "options": ["Above 1", "Above 3", "Above 5", "Above 10"],
-                "correct": 2
-            },
-            {
-                "question": "What does a high VIF indicate?",
-                "options": ["Low correlation", "High correlation", "No correlation", "Negative correlation"],
-                "correct": 1
-            }
-        ]
+        st.subheader("VIF Scores")
+        vif_series = pd.Series(
+            [variance_inflation_factor(train_features_scaled_new2.values, i) for i in range(train_features_scaled_new2.shape[1])],
+            index=train_features_scaled_new2.columns,
+            dtype=float
+        )
+        st.write(vif_series)
+
+    elif selected_model == "ols_res_4":
+        st.subheader("Model Summary")
+        st.write(ols_res_4.summary())
         
-        for i, q in enumerate(questions):
-            st.subheader(f"Question {i+1}: {q['question']}")
-            user_answer = st.radio(f"Select your answer for Question {i+1}:", q['options'], key=f"q{i}")
-            
-            if st.button(f"Check Answer for Question {i+1}", key=f"check{i}"):
-                if q['options'].index(user_answer) == q['correct']:
-                    st.success("Correct! Well done!")
-                else:
-                    st.error("Not quite right. Try again!")
-            st.write("---")
+        st.subheader("VIF Scores")
+        vif_series = pd.Series(
+            [variance_inflation_factor(train_features_scaled_new3.values, i) for i in range(train_features_scaled_new3.shape[1])],
+            index=train_features_scaled_new3.columns,
+            dtype=float
+        )
+        st.write(vif_series)
+
+    elif selected_model == "ols_res_5":
+        st.subheader("Model Summary")
+        st.write(ols_res_5.summary())
+        
+        st.subheader("VIF Scores")
+        vif_series = pd.Series(
+            [variance_inflation_factor(train_features_scaled_new4.values, i) for i in range(train_features_scaled_new4.shape[1])],
+            index=train_features_scaled_new4.columns,
+            dtype=float
+        )
+        st.write(vif_series)
+
+    elif selected_model == "ols_res_6":
+        st.subheader("Model Summary")
+        st.write(ols_res_6.summary())
+        
+        st.subheader("VIF Scores")
+        vif_series = pd.Series(
+            [variance_inflation_factor(train_features_scaled_new5.values, i) for i in range(train_features_scaled_new5.shape[1])],
+            index=train_features_scaled_new5.columns,
+            dtype=float
+        )
+        st.write(vif_series)
+
+    elif selected_model == "ols_res_7":
+        st.subheader("Model Summary")
+        st.write(ols_res_7.summary())
+        
+        st.subheader("VIF Scores")
+        vif_series = pd.Series(
+            [variance_inflation_factor(train_features_scaled_new6.values, i) for i in range(train_features_scaled_new6.shape[1])],
+            index=train_features_scaled_new6.columns,
+            dtype=float
+        )
+        st.write(vif_series)
+
+    else:
+        st.subheader("Model Summary")
+        st.write(ols_res_8.summary())
+        
+        st.subheader("VIF Scores")
+        vif_series = pd.Series(
+            [variance_inflation_factor(train_features_scaled_new6.values, i) for i in range(train_features_scaled_new6.shape[1])],
+            index=train_features_scaled_new6.columns,
+            dtype=float
+        )
+        st.write(vif_series)
 
 else:
     st.write("Please upload both train and test CSV files to proceed.")
-
-# Footer
-st.markdown("""
-<style>
-.footer {
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    background-color: #0E1117;
-    color: #FAFAFA;
-    text-align: center;
-    padding: 10px;
-    font-size: 12px;
-}
-</style>
-<div class="footer">
-    Developed by Venugopal Adep | Data source: BigMart Sales Dataset
-</div>
-""", unsafe_allow_html=True)
-
-# Add some spacing at the bottom to prevent content from being hidden by the footer
-st.write("<br><br><br>", unsafe_allow_html=True)
