@@ -1,4 +1,3 @@
-import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -6,6 +5,8 @@ import plotly.graph_objects as go
 import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.preprocessing import MinMaxScaler
+
+
 
 # Set page config
 st.set_page_config(page_title="VIF and Model Analysis", layout="wide", page_icon="📊")
