@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.preprocessing import MinMaxScaler
+import streamlit as st
 
 
 
